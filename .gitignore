@@ -1,0 +1,61 @@
+# ── Divido Chatbot — .gitignore ───────────────────────────────────────────────
+
+# Environment — NEVER commit real env files
+.env
+.env.production
+.env.local
+.env.*.local
+
+# SSL certificates — deployer adds these on the server
+nginx/ssl/*.pem
+nginx/ssl/*.crt
+nginx/ssl/*.key
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+*.egg
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / React
+node_modules/
+frontend/chat-widget/dist/
+frontend/admin/dist/
+frontend/chat-widget/.vite/
+frontend/admin/.vite/
+frontend/chat-widget/.env.local
+frontend/admin/.env.local
+
+# Data — raw files and processed chunks stay local
+data/raw/
+data/processed/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# Misc
+*.bak
+*.tmp

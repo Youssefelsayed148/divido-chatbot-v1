@@ -1,0 +1,13 @@
+{
+  "urls": [
+    { "url": "https://projectdivido.com/", "section": "homepage", "intent_categories": ["overview", "how_it_works"] },
+    { "url": "https://projectdivido.com/#howItWorks", "section": "how_it_works", "intent_categories": ["how_it_works"] },
+    { "url": "https://projectdivido.com/#opportunities", "section": "opportunities", "intent_categories": ["opportunities"] },
+    { "url": "https://projectdivido.com/#features", "section": "features", "intent_categories": ["how_it_works", "overview"] },
+    { "url": "https://projectdivido.com/#faq", "section": "faq", "intent_categories": ["overview", "getting_started", "trust_legal"] },
+    { "url": "https://projectdivido.com/leaderboard/", "section": "leaderboard", "intent_categories": ["opportunities", "getting_started"] },
+    { "url": "https://projectdivido.com/refundpolicy", "section": "refund_policy", "intent_categories": ["trust_legal", "support"] },
+    { "url": "https://projectdivido.com/privacypolicy", "section": "privacy_policy", "intent_categories": ["trust_legal"] },
+    { "url": "https://projectdivido.com/terms", "section": "terms_website", "intent_categories": ["trust_legal"] }
+  ]
+}

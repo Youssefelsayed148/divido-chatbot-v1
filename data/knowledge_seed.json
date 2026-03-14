@@ -1,0 +1,58 @@
+[
+  {
+    "title": "What is Divido?",
+    "content": "Divido is a fractional real estate investment platform that allows you to invest in real estate properties from as little as EGP 25,000. You can buy a share of a property and become a part owner, earn monthly rental income, benefit from property appreciation, and sell your share to other investors when you need liquidity. Divido is fully compliant with Egyptian real estate regulations and offers a completely digital onboarding and investment process.",
+    "topic": "overview",
+    "intent_categories": ["overview", "how_it_works"],
+    "source_name": "Divido Core Knowledge"
+  },
+  {
+    "title": "How Divido Works",
+    "content": "Divido works in 6 simple steps: 1) Download the App from App Store or Google Play. 2) Verify Yourself through digital onboarding. 3) Browse Properties from a curated selection of real estate. 4) Tap to Invest starting from EGP 25,000. 5) Earn Monthly Income through rental returns. 6) Cash Out when you need liquidity by selling your share to other investors. The entire process is digital and compliant with Egyptian real estate regulations.",
+    "topic": "how_it_works",
+    "intent_categories": ["how_it_works", "getting_started"],
+    "source_name": "Divido Core Knowledge"
+  },
+  {
+    "title": "Getting Started with Divido",
+    "content": "To start investing on Divido: Create your free account by downloading the app, complete identity verification, browse available properties, and invest from as little as EGP 25,000. You can also speak to one of our advisors for a personalized experience. Divido is designed for first-time investors, working professionals, savers looking for inflation-proof assets, and expats looking to invest back home.",
+    "topic": "getting_started",
+    "intent_categories": ["getting_started", "overview"],
+    "source_name": "Divido Core Knowledge"
+  },
+  {
+    "title": "Divido Investment Opportunities",
+    "content": "Divido offers curated real estate investment opportunities including ready properties and under-construction properties. Each listing shows the investment term, total return, net yield, annualized return, percentage funded, and days left to invest. Investors earn rental income and property appreciation. The minimum investment is EGP 25,000.",
+    "topic": "opportunities",
+    "intent_categories": ["opportunities", "how_it_works"],
+    "source_name": "Divido Core Knowledge"
+  },
+  {
+    "title": "Is Divido Legal and Safe?",
+    "content": "Divido is fully compliant with Egyptian real estate regulations. The platform offers fractional ownership of real estate — not crypto or speculative assets. Investments are backed by real physical properties. Divido operates within local laws and provides transparent documentation for each investment. For detailed legal information, refer to the Terms and Conditions.",
+    "topic": "trust_legal",
+    "intent_categories": ["trust_legal", "overview"],
+    "source_name": "Divido Core Knowledge"
+  },
+  {
+    "title": "Divido Property Ownership FAQ",
+    "content": "Common questions about Divido ownership: You will not receive a traditional title deed for partial ownership, but your ownership share is recorded digitally. You can partially or fully own a property. You can exit a property after owning it by selling your share to other investors. The minimum investment is EGP 25,000. Divido is compliant with Egyptian real estate law.",
+    "topic": "trust_legal",
+    "intent_categories": ["trust_legal", "getting_started"],
+    "source_name": "Divido Core Knowledge"
+  },
+  {
+    "title": "Why Choose Divido?",
+    "content": "Divido gives investors control, clarity, and real access to real estate — what banks and brokers never offered. Key benefits: Start from just EGP 25,000, earn rental income and property appreciation, fully digital onboarding, compliant with Egyptian regulations, track returns and portfolio value in one place. Divido serves first-time investors, working professionals, expats, and savers looking for inflation-proof assets.",
+    "topic": "overview",
+    "intent_categories": ["overview", "how_it_works"],
+    "source_name": "Divido Core Knowledge"
+  },
+  {
+    "title": "Contacting Divido Support",
+    "content": "If you need help with your account, investments, or have questions not answered here, you can contact the Divido support team through the app or website. Visit projectdivido.com for contact information. Divido also offers advisor consultations for personalized investment guidance.",
+    "topic": "support",
+    "intent_categories": ["support"],
+    "source_name": "Divido Core Knowledge"
+  }
+]

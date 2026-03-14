@@ -1,0 +1,14 @@
+{
+  "website_welcome": [
+    { "id": "how_divido_works", "label": "How Divido Works", "workflow": "how_divido_works" },
+    { "id": "start_investing", "label": "Start Investing", "workflow": "start_investing" },
+    { "id": "trust_legal", "label": "Trust & Legal", "workflow": "trust_legal" },
+    { "id": "contact_support", "label": "Contact Support", "workflow": "need_support" }
+  ],
+  "app_welcome": [
+    { "id": "how_divido_works", "label": "How Divido Works", "workflow": "how_divido_works" },
+    { "id": "explore_opportunities", "label": "Explore Opportunities", "workflow": "explore_opportunities" },
+    { "id": "need_help", "label": "Need Help", "workflow": "need_support" },
+    { "id": "trust_legal", "label": "Trust & Legal", "workflow": "trust_legal" }
+  ]
+}

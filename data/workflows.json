@@ -1,0 +1,34 @@
+{
+  "workflows": [
+    {
+      "id": "how_divido_works",
+      "label": "How Divido Works",
+      "intent": "how_it_works",
+      "opening_message": "Divido allows you to own a fraction of premium real estate properties. Here's how it works..."
+    },
+    {
+      "id": "start_investing",
+      "label": "Start Investing",
+      "intent": "getting_started",
+      "opening_message": "Getting started with Divido is simple. Let me walk you through the steps..."
+    },
+    {
+      "id": "explore_opportunities",
+      "label": "Explore Opportunities",
+      "intent": "opportunities",
+      "opening_message": "Divido features carefully selected real estate opportunities. Here's what you can explore..."
+    },
+    {
+      "id": "trust_legal",
+      "label": "Trust & Legal",
+      "intent": "trust_legal",
+      "opening_message": "Divido is built on full legal transparency. Let me answer your questions about ownership and policy..."
+    },
+    {
+      "id": "need_support",
+      "label": "Need Support",
+      "intent": "support",
+      "opening_message": "I'm here to help. Let me connect you with the right support path..."
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "intents": [
+    { "id": "overview", "label": "What is Divido", "description": "General questions about what Divido is" },
+    { "id": "how_it_works", "label": "How It Works", "description": "Fractional ownership and platform model" },
+    { "id": "getting_started", "label": "Getting Started", "description": "How to begin using the platform" },
+    { "id": "opportunities", "label": "Opportunities", "description": "Available investment opportunities" },
+    { "id": "trust_legal", "label": "Trust & Legal", "description": "Ownership, legality, policy questions" },
+    { "id": "support", "label": "Support", "description": "Help requests and contact" },
+    { "id": "fallback", "label": "Fallback", "description": "Unknown or unsupported requests" }
+  ]
+}

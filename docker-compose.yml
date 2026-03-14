@@ -1,0 +1,94 @@
+services:
+
+  # ── PostgreSQL + pgvector ─────────────────────────────────────────────────
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: divido_db
+    restart: always
+    env_file: .env.production
+    environment:
+      POSTGRES_DB:       ${DB_NAME}
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - divido_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Chat API (port 8000) ──────────────────────────────────────────────────
+  chat_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: divido_chat_api
+    restart: always
+    command: uvicorn backend.api.chat:app --host 0.0.0.0 --port 8000 --workers 2
+    env_file: .env.production
+    environment:
+      DB_HOST: db
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - divido_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Admin API (port 8001) ─────────────────────────────────────────────────
+  admin_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: divido_admin_api
+    restart: always
+    command: uvicorn backend.api.admin:app --host 0.0.0.0 --port 8001 --workers 1
+    env_file: .env.production
+    environment:
+      DB_HOST: db
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - divido_net
+
+  # ── Nginx reverse proxy + frontend static files ───────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: divido_nginx
+    restart: always
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./frontend/chat-widget/dist:/usr/share/nginx/html:ro
+      - ./frontend/admin/dist:/usr/share/nginx/admin:ro
+    depends_on:
+      - chat_api
+      - admin_api
+    networks:
+      - divido_net
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  divido_net:
+    driver: bridge
