@@ -223,7 +223,7 @@ const CSS = `
 
   /* ── Lead Form ── */
   .dv-lead-form { background: #fff; border: 1.5px solid rgba(255,107,43,0.15); border-radius: 18px; margin-top: 8px; max-width: 92%; margin-left: 36px; box-shadow: 0 8px 32px rgba(255,107,43,0.12), 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
-  .dv-lead-form.rtl { margin-left: 0; margin-right: 36px; direction: rtl; }
+  .dv-lead-form.rtl { margin-left: 0; margin-right: 0; direction: rtl; max-width: 98%; width: 98%; }
   .dv-lead-form-header { background: linear-gradient(135deg, #1A1A1A 0%, #2D2D2D 100%); padding: 14px 16px; display: flex; align-items: center; gap: 11px; position: relative; overflow: hidden; }
   .dv-lead-form-header::after { content: ''; position: absolute; top: -15px; right: -15px; width: 60px; height: 60px; background: radial-gradient(circle, rgba(255,107,43,0.3), transparent 70%); border-radius: 50%; }
   .dv-lead-form-icon { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, #FF6B2B, #E84E0F); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(255,107,43,0.4); }

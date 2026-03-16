@@ -908,10 +908,10 @@ export default function AdminPanel() {
 
           <div style={{ display: "flex", gap: 4, marginLeft: 24 }}>
             {[
-              { key: "dashboard", label: "📊 Dashboard"    },
-              { key: "list",      label: "Knowledge Base"  },
-              { key: "preview",   label: "Preview Answer"  },
-              { key: "leads",     label: "Leads"           }
+              { key: "dashboard", label: "📊 Dashboard"       },
+              { key: "list",      label: "🧠 Knowledge Base"  },
+              { key: "preview",   label: "🔍 Preview Answer"  },
+              { key: "leads",     label: "📋 Leads"           }
             ].map(tab => (
               <button
                 key={tab.key}

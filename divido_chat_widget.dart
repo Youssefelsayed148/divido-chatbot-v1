@@ -1,5 +1,5 @@
 // ── Divido Chatbot — Flutter Widget ──────────────────────────────────────────
-// Version: 2.0 (Phase 7 — Arabic + Lead Capture + Enhanced Markdown)
+// Version: 3.0 (Phase V1 Final — Streaming + Cache + Arabic Form + Contact Support)
 //
 // Drop this file into: lib/widgets/divido_chat_widget.dart
 //
@@ -12,86 +12,113 @@
 //   import 'package:your_app/widgets/divido_chat_widget.dart';
 //   DividoChatWidget(language: "ar")  // or "en"
 
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
-const String _kApiBase = "http://10.0.2.2:8000"; // Android emulator
-// const String _kApiBase = "https://your-production-domain.com/api/chat"; // Production
+// Android emulator reaches host machine via 10.0.2.2
+// iOS simulator reaches host machine via 127.0.0.1
+// Physical device: use your computer's local IP e.g. http://192.168.1.x:8000
+// Production: http://your-domain.com/api
+const String _kApiBase = "http://10.0.2.2:8000";
+// const String _kApiBase = "https://your-production-domain.com/api";
 
 const Color _kOrange     = Color(0xFFFF6B2B);
 const Color _kOrangeDark = Color(0xFFE84E0F);
 const Color _kDark       = Color(0xFF1A1A1A);
+const Color _kDark2      = Color(0xFF2D2D2D);
 const Color _kGrey       = Color(0xFFF5F5F5);
 const Color _kBorder     = Color(0xFFEEEEEE);
+const Color _kOrangeLight= Color(0xFFFFF0E8);
 
 // ── Translations ──────────────────────────────────────────────────────────────
 const Map<String, Map<String, String>> _T = {
   "en": {
-    "title":           "Divido Assistant",
-    "subtitle":        "AI-powered support",
-    "placeholder":     "Ask anything about Divido...",
-    "send":            "Send",
-    "typing":          "Divido is thinking...",
-    "welcome":         "Hello! I'm Divido's AI Assistant.\n\nI can help you understand the platform, explore investment opportunities, and answer your questions about fractional real estate.",
-    "error":           "Something went wrong. Please try again.",
-    "contact_title":   "Talk to Our Team",
-    "contact_sub":     "Our team is available to help you personally.",
-    "email_label":     "Email",
-    "phone_label":     "Phone",
-    "form_title":      "Leave Your Details",
-    "form_sub":        "We'll contact you within 24 hours.",
-    "name_hint":       "Your name",
-    "email_hint":      "your@email.com",
-    "phone_hint":      "Phone number (optional)",
-    "submit":          "Send Request",
-    "submitting":      "Sending...",
-    "form_success":    "Thank you! We'll be in touch soon.",
-    "form_error":      "Please enter your name and a valid email.",
+    "title":            "Divido Assistant",
+    "subtitle":         "Online · Real Estate Investment Guide",
+    "placeholder":      "Ask anything about Divido...",
+    "typing":           "Divido is thinking...",
+    "welcome":          "Hello! I'm **Divido's AI Assistant**.\n\nI can help you understand the platform, explore investment opportunities, and answer your questions about fractional real estate.",
+    "error":            "Something went wrong. Please try again.",
+    "contact_title":    "Reach us directly",
+    "contact_sub":      "Our team is available to help you personally.",
+    "email_label":      "Email",
+    "phone_label":      "Phone",
+    "form_title":       "Get in Touch",
+    "form_sub":         "Our team will contact you shortly",
+    "name_label":       "Full Name",
+    "name_hint":        "Enter your full name",
+    "email_label2":     "Email Address",
+    "email_hint":       "Enter your email",
+    "phone_label2":     "Phone Number",
+    "phone_hint":       "Optional",
+    "submit":           "Send Message",
+    "submitting":       "Sending...",
+    "form_success":     "Thank you! We'll be in touch soon.",
+    "form_error":       "Please enter your name and a valid email.",
+    "contact_support":  "Contact Support",
+    "start_conv":       "Start of conversation",
+    "footer":           "Powered by Divido AI",
   },
   "ar": {
-    "title":           "مساعد ديفيدو",
-    "subtitle":        "دعم مدعوم بالذكاء الاصطناعي",
-    "placeholder":     "اسأل أي شيء عن ديفيدو...",
-    "send":            "إرسال",
-    "typing":          "ديفيدو يفكر...",
-    "welcome":         "مرحباً! أنا المساعد الذكي لمنصة ديفيدو.\n\nيمكنني مساعدتك في فهم المنصة، واستكشاف فرص الاستثمار، والإجابة على أسئلتك حول العقارات التجزيئية.",
-    "error":           "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
-    "contact_title":   "تحدث مع فريقنا",
-    "contact_sub":     "فريقنا متاح لمساعدتك شخصياً.",
-    "email_label":     "البريد الإلكتروني",
-    "phone_label":     "الهاتف",
-    "form_title":      "اترك بياناتك",
-    "form_sub":        "سنتواصل معك خلال 24 ساعة.",
-    "name_hint":       "اسمك",
-    "email_hint":      "بريدك@الإلكتروني.com",
-    "phone_hint":      "رقم الهاتف (اختياري)",
-    "submit":          "إرسال الطلب",
-    "submitting":      "جارٍ الإرسال...",
-    "form_success":    "شكراً لك! سنتواصل معك قريباً.",
-    "form_error":      "يرجى إدخال اسمك وبريد إلكتروني صحيح.",
+    "title":            "مساعد ديفيدو",
+    "subtitle":         "متاح · دليل الاستثمار العقاري",
+    "placeholder":      "اسأل أي شيء عن ديفيدو...",
+    "typing":           "ديفيدو يفكر...",
+    "welcome":          "مرحباً! أنا **مساعد ديفيدو الذكي**.\n\nيمكنني مساعدتك في فهم المنصة، واستكشاف فرص الاستثمار، والإجابة على أسئلتك حول العقارات التجزيئية.",
+    "error":            "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "contact_title":    "تواصل معنا مباشرة",
+    "contact_sub":      "فريقنا متاح لمساعدتك شخصياً.",
+    "email_label":      "البريد الإلكتروني",
+    "phone_label":      "الهاتف",
+    "form_title":       "تواصل معنا",
+    "form_sub":         "سيتواصل معك فريقنا قريباً",
+    "name_label":       "الاسم الكامل",
+    "name_hint":        "أدخل اسمك الكامل",
+    "email_label2":     "البريد الإلكتروني",
+    "email_hint":       "أدخل بريدك الإلكتروني",
+    "phone_label2":     "رقم الهاتف",
+    "phone_hint":       "اختياري",
+    "submit":           "إرسال الرسالة",
+    "submitting":       "جارٍ الإرسال...",
+    "form_success":     "شكراً لك! سيتواصل معك فريق ديفيدو قريباً.",
+    "form_error":       "يرجى إدخال اسمك وبريد إلكتروني صحيح.",
+    "contact_support":  "تواصل مع الدعم",
+    "start_conv":       "بداية المحادثة",
+    "footer":           "مدعوم بواسطة ديفيدو AI",
   }
 };
 
+// Support button labels in both languages
+const List<String> _kSupportLabels = [
+  "Contact Support", "تواصل مع الدعم", "Need Help", "تحتاج مساعدة؟"
+];
+
 // ── Data Models ───────────────────────────────────────────────────────────────
+enum _MsgType { text, leadForm }
+
 class _Message {
-  final String role; // "user" | "bot"
-  final String text;
-  final List<String> buttons;
-  final bool showContactForm;
-  final Map<String, dynamic> contactInfo;
-  final DateTime time;
+  final String    role;      // "user" | "bot"
+  final _MsgType  type;
+  String          text;      // mutable for streaming
+  final List<String>          buttons;
+  final Map<String, dynamic>  contactInfo;
+  final bool      streaming;
+  final String    formLang;  // which language the form should use
+  final DateTime  time;
 
   _Message({
     required this.role,
-    required this.text,
-    this.buttons = const [],
-    this.showContactForm = false,
-    this.contactInfo = const {},
+    this.type       = _MsgType.text,
+    this.text       = "",
+    this.buttons    = const [],
+    this.contactInfo= const {},
+    this.streaming  = false,
+    this.formLang   = "en",
     DateTime? time,
   }) : time = time ?? DateTime.now();
 }
@@ -99,7 +126,6 @@ class _Message {
 // ── Main Widget ───────────────────────────────────────────────────────────────
 class DividoChatWidget extends StatefulWidget {
   final String language;
-
   const DividoChatWidget({super.key, this.language = "en"});
 
   @override
@@ -108,33 +134,28 @@ class DividoChatWidget extends StatefulWidget {
 
 class _DividoChatWidgetState extends State<DividoChatWidget>
     with SingleTickerProviderStateMixin {
-  // ── State ──────────────────────────────────────────────────────────────────
-  bool _isOpen         = false;
-  bool _isLoading      = false;
-  String _sessionId    = "";
-  String _lang         = "en";
 
-  final List<_Message> _messages    = [];
-  final TextEditingController _ctrl = TextEditingController();
-  final ScrollController _scroll   = ScrollController();
-  late AnimationController _animCtrl;
-  late Animation<double> _scaleAnim;
+  bool   _isOpen    = false;
+  bool   _isLoading = false;
+  String _sessionId = "";
+  String _lang      = "en";
+
+  final List<_Message>       _messages = [];
+  final TextEditingController _ctrl     = TextEditingController();
+  final ScrollController      _scroll   = ScrollController();
+  late  AnimationController   _animCtrl;
+  late  Animation<double>     _scaleAnim;
 
   // ── Init ───────────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
     _lang = widget.language;
-
     _animCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 280),
     );
-    _scaleAnim = CurvedAnimation(
-      parent: _animCtrl,
-      curve: Curves.easeOutBack,
-    );
-
+    _scaleAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutBack);
     _loadSession();
   }
 
@@ -146,7 +167,7 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
     super.dispose();
   }
 
-  // ── Session ────────────────────────────────────────────────────────────────
+  // ── Session persisted across app restarts ──────────────────────────────────
   Future<void> _loadSession() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -155,18 +176,36 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
     });
     await prefs.setString("divido_session_id", _sessionId);
 
-    // Welcome message
-    _messages.add(_Message(
-      role: "bot",
-      text: _T[_lang]!["welcome"]!,
-      buttons: _lang == "ar"
+    // Fetch welcome buttons from API
+    try {
+      final res = await http.get(
+        Uri.parse("$_kApiBase/chat/buttons/app?language=$_lang"),
+      ).timeout(const Duration(seconds: 5));
+      List<String> btns = _lang == "ar"
           ? ["كيف يعمل ديفيدو", "استكشف الفرص", "تحتاج مساعدة؟", "الثقة والقانون"]
-          : ["How Divido Works", "Explore Opportunities", "Need Help", "Trust & Legal"],
-    ));
+          : ["How Divido Works", "Explore Opportunities", "Need Help", "Trust & Legal"];
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        btns = List<String>.from(data["buttons"] ?? btns);
+      }
+      _messages.add(_Message(
+        role:    "bot",
+        text:    _T[_lang]!["welcome"]!,
+        buttons: btns,
+      ));
+    } catch (_) {
+      _messages.add(_Message(
+        role:    "bot",
+        text:    _T[_lang]!["welcome"]!,
+        buttons: _lang == "ar"
+            ? ["كيف يعمل ديفيدو", "استكشف الفرص", "تحتاج مساعدة؟", "الثقة والقانون"]
+            : ["How Divido Works", "Explore Opportunities", "Need Help", "Trust & Legal"],
+      ));
+    }
     if (mounted) setState(() {});
   }
 
-  // ── Toggle chat ────────────────────────────────────────────────────────────
+  // ── Toggle ─────────────────────────────────────────────────────────────────
   void _toggleChat() {
     setState(() => _isOpen = !_isOpen);
     if (_isOpen) {
@@ -177,77 +216,126 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
     }
   }
 
-  // ── Detect Arabic ──────────────────────────────────────────────────────────
+  // ── Arabic detection ───────────────────────────────────────────────────────
   bool _isArabicText(String text) {
-    final arabicChars = text.runes.where(
-      (r) => r >= 0x0600 && r <= 0x06FF
-    ).length;
+    final arabicChars = text.runes
+        .where((r) => r >= 0x0600 && r <= 0x06FF)
+        .length;
     return arabicChars / text.length.clamp(1, 9999) > 0.3;
   }
 
-  // ── Send message ───────────────────────────────────────────────────────────
+  // ── Send via streaming SSE ─────────────────────────────────────────────────
   Future<void> _sendMessage(String text, {String? clickedButton}) async {
     if (text.trim().isEmpty || _isLoading) return;
 
-    // Auto-detect language
-    String lang = _lang;
-    if (_lang == "en" && _isArabicText(text)) lang = "ar";
+    // ── Contact Support → show form directly, no API call ──────────────────
+    if (clickedButton != null && _kSupportLabels.contains(clickedButton)) {
+      final formLang = _isArabicText(clickedButton) ? "ar" : "en";
+      setState(() {
+        _messages.add(_Message(role: "user", text: text.trim()));
+        _messages.add(_Message(
+          role:     "bot",
+          type:     _MsgType.leadForm,
+          formLang: formLang,
+        ));
+      });
+      _scrollToBottom();
+      return;
+    }
 
-    final userMsg = _Message(role: "user", text: text.trim());
+    final msgLang = (_lang == "en" && _isArabicText(text)) ? "ar" : _lang;
+
+    // Add user message + empty streaming bot message
+    final botMsg = _Message(role: "bot", text: "", streaming: true);
     setState(() {
-      _messages.add(userMsg);
+      _messages.add(_Message(role: "user", text: text.trim()));
+      _messages.add(botMsg);
       _isLoading = true;
     });
     _ctrl.clear();
     _scrollToBottom();
 
     try {
-      final response = await http.post(
-        Uri.parse("$_kApiBase/chat/message"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "message":        text.trim(),
-          "session_id":     _sessionId,
-          "clicked_button": clickedButton,
-          "language":       lang,
-        }),
+      final request = http.Request(
+        "POST",
+        Uri.parse("$_kApiBase/chat/stream"),
       );
+      request.headers["Content-Type"] = "application/json";
+      request.headers["Accept"]       = "text/event-stream";
+      request.body = jsonEncode({
+        "message":        text.trim(),
+        "session_id":     _sessionId,
+        "clicked_button": clickedButton,
+        "language":       msgLang,
+      });
+
+      final client   = http.Client();
+      final response = await client.send(request)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        final stream    = response.stream.transform(utf8.decoder);
+        String buffer   = "";
 
-        // Update session id if server created one
-        if (data["session_id"] != null) {
-          _sessionId = data["session_id"];
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString("divido_session_id", _sessionId);
+        await for (final chunk in stream) {
+          buffer += chunk;
+          final lines = buffer.split("\n");
+          buffer = lines.removeLast(); // keep incomplete line
+
+          for (final line in lines) {
+            if (!line.startsWith("data: ")) continue;
+            try {
+              final data = jsonDecode(line.substring(6));
+
+              if (data["type"] == "chunk") {
+                setState(() {
+                  botMsg.text += (data["text"] as String? ?? "");
+                });
+                _scrollToBottom();
+              } else if (data["type"] == "done") {
+                // Update session id
+                if (data["session_id"] != null) {
+                  _sessionId = data["session_id"];
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString("divido_session_id", _sessionId);
+                }
+
+                // Ensure Contact Support button is always present
+                final btns = List<String>.from(data["suggested_buttons"] ?? []);
+                final supportBtn = msgLang == "ar" ? "تواصل مع الدعم" : "Contact Support";
+                if (!btns.contains(supportBtn)) btns.add(supportBtn);
+
+                setState(() {
+                  botMsg.streaming = false;
+                  botMsg.buttons   = btns;
+                  if (data["show_contact_form"] == true) {
+                    _messages.add(_Message(
+                      role:     "bot",
+                      type:     _MsgType.leadForm,
+                      formLang: msgLang,
+                    ));
+                  }
+                });
+              }
+            } catch (_) {}
+          }
         }
-
-        final botMsg = _Message(
-          role:             "bot",
-          text:             data["message"] ?? _T[_lang]!["error"]!,
-          buttons:          List<String>.from(data["suggested_buttons"] ?? []),
-          showContactForm:  data["show_contact_form"] ?? false,
-          contactInfo:      Map<String, dynamic>.from(data["contact_info"] ?? {}),
-        );
-
-        setState(() => _messages.add(botMsg));
+        client.close();
       } else {
-        _addError();
+        setState(() {
+          botMsg.text      = _T[_lang]!["error"]!;
+          botMsg.streaming = false;
+        });
       }
     } catch (e) {
-      _addError();
+      setState(() {
+        botMsg.text      = _T[_lang]!["error"]!;
+        botMsg.streaming = false;
+      });
     } finally {
       setState(() => _isLoading = false);
       _scrollToBottom();
     }
-  }
-
-  void _addError() {
-    setState(() => _messages.add(_Message(
-      role: "bot",
-      text: _T[_lang]!["error"]!,
-    )));
   }
 
   void _scrollToBottom() {
@@ -266,24 +354,20 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
   @override
   Widget build(BuildContext context) {
     final isRtl = _lang == "ar";
-
     return Directionality(
       textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
       child: Stack(
         children: [
-          // ── Chat Panel ───────────────────────────────────────────────────
           if (_isOpen)
             ScaleTransition(
-              scale: _scaleAnim,
+              scale:     _scaleAnim,
               alignment: isRtl ? Alignment.bottomLeft : Alignment.bottomRight,
               child: _buildChatPanel(isRtl),
             ),
-
-          // ── Floating Button ──────────────────────────────────────────────
           Positioned(
             bottom: 20,
-            right: isRtl ? null : 20,
-            left:  isRtl ? 20   : null,
+            right:  isRtl ? null : 20,
+            left:   isRtl ? 20   : null,
             child: _buildFab(),
           ),
         ],
@@ -291,6 +375,7 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
     );
   }
 
+  // ── FAB ────────────────────────────────────────────────────────────────────
   Widget _buildFab() {
     return GestureDetector(
       onTap: _toggleChat,
@@ -313,7 +398,7 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
           ],
         ),
         child: Icon(
-          _isOpen ? Icons.close : Icons.chat_bubble_outline_rounded,
+          _isOpen ? Icons.close_rounded : Icons.chat_bubble_outline_rounded,
           color: Colors.white,
           size: 26,
         ),
@@ -321,27 +406,29 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
     );
   }
 
+  // ── Chat Panel ─────────────────────────────────────────────────────────────
   Widget _buildChatPanel(bool isRtl) {
     return Positioned(
       bottom: 90,
-      right: isRtl ? null : 16,
-      left:  isRtl ? 16   : null,
+      right:  isRtl ? null : 16,
+      left:   isRtl ? 16   : null,
       child: Material(
         elevation: 16,
         borderRadius: BorderRadius.circular(20),
         shadowColor: Colors.black26,
         child: Container(
-          width: 340,
-          height: 560,
+          width: 350,
+          height: 580,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color(0xFFFAFAF9),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
             children: [
               _buildHeader(),
               Expanded(child: _buildMessageList(isRtl)),
-              if (_isLoading) _buildTypingIndicator(),
+              if (_isLoading && !_messages.any((m) => m.streaming))
+                _buildTypingIndicator(),
               _buildInput(isRtl),
             ],
           ),
@@ -356,26 +443,28 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [_kDark, Color(0xFF2D2D2D)],
+          colors: [_kDark, _kDark2],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
+          topLeft:  Radius.circular(20),
           topRight: Radius.circular(20),
         ),
       ),
       child: Row(
         children: [
           Container(
-            width: 36, height: 36,
+            width: 38, height: 38,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [_kOrange, _kOrangeDark],
-              ),
+              gradient: const LinearGradient(colors: [_kOrange, _kOrangeDark]),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.home_rounded, color: Colors.white, size: 20),
+            child: const Center(
+              child: Text("D", style: TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17,
+              )),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -385,24 +474,39 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
                 Text(
                   _T[_lang]!["title"]!,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
+                    color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15,
                   ),
                 ),
-                Text(
-                  _T[_lang]!["subtitle"]!,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 11,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      width: 6, height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4ADE80), shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      _T[_lang]!["subtitle"]!,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.55), fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           GestureDetector(
             onTap: _toggleChat,
-            child: Icon(Icons.close, color: Colors.white.withOpacity(0.7), size: 20),
+            child: Container(
+              width: 28, height: 28,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.close, color: Colors.white.withOpacity(0.7), size: 16),
+            ),
           ),
         ],
       ),
@@ -413,35 +517,47 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
   Widget _buildMessageList(bool isRtl) {
     return ListView.builder(
       controller: _scroll,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final msg = _messages[index];
+
+        if (msg.type == _MsgType.leadForm) {
+          return _buildLeadFormInline(msg.formLang);
+        }
+
         return Column(
           crossAxisAlignment: msg.role == "user"
               ? (isRtl ? CrossAxisAlignment.start : CrossAxisAlignment.end)
               : (isRtl ? CrossAxisAlignment.end   : CrossAxisAlignment.start),
           children: [
             _buildBubble(msg, isRtl),
-            if (msg.showContactForm && msg.contactInfo.isNotEmpty)
+            if (msg.contactInfo.isNotEmpty)
               _buildContactCard(msg.contactInfo, isRtl),
-            if (msg.buttons.isNotEmpty)
+            if (!msg.streaming && msg.buttons.isNotEmpty)
               _buildButtons(msg.buttons, isRtl),
-            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(top: 2, bottom: 8, left: 4, right: 4),
+              child: Text(
+                "${msg.time.hour.toString().padLeft(2,'0')}:${msg.time.minute.toString().padLeft(2,'0')}",
+                style: const TextStyle(fontSize: 9, color: Color(0xFFBBBBBB)),
+              ),
+            ),
           ],
         );
       },
     );
   }
 
-  // ── Message Bubble ─────────────────────────────────────────────────────────
+  // ── Bubble ─────────────────────────────────────────────────────────────────
   Widget _buildBubble(_Message msg, bool isRtl) {
-    final isUser = msg.role == "user";
+    final isUser   = msg.role == "user";
+    final isMsgAr  = isRtl || _isArabicText(msg.text);
 
     return Container(
       margin: EdgeInsets.only(
-        left:  isUser ? 40 : 0,
-        right: isUser ? 0  : 40,
+        left:   isUser ? 40 : 0,
+        right:  isUser ? 0  : 40,
         bottom: 4,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -468,85 +584,113 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
       child: isUser
           ? Text(
               msg.text,
-              style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
+              textDirection: isMsgAr ? TextDirection.rtl : TextDirection.ltr,
+              style: const TextStyle(
+                color: Colors.white, fontSize: 14, height: 1.5,
+              ),
             )
-          : _buildMarkdown(msg.text, isRtl),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildMarkdown(msg.text, isMsgAr),
+                if (msg.streaming)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: _StreamingCursor(),
+                  ),
+              ],
+            ),
     );
   }
 
-  // ── Markdown Renderer ──────────────────────────────────────────────────────
+  // ── Markdown ───────────────────────────────────────────────────────────────
   Widget _buildMarkdown(String text, bool isRtl) {
-    return MarkdownBody(
-      data: text,
-      selectable: false,
-      styleSheet: MarkdownStyleSheet(
-        p: TextStyle(
-          color: _kDark, fontSize: 13.5, height: 1.65,
-          fontFamily: isRtl ? "Cairo" : null,
-        ),
-        strong: const TextStyle(
-          color: _kDark, fontWeight: FontWeight.w700,
-          backgroundColor: Color(0x18FF6B2B),
-        ),
-        em: const TextStyle(
-          color: Color(0xFF555555), fontStyle: FontStyle.italic,
-        ),
-        h1: const TextStyle(
-          color: _kDark, fontSize: 15, fontWeight: FontWeight.w800,
-        ),
-        h2: TextStyle(
-          color: _kDark, fontSize: 14, fontWeight: FontWeight.w700,
-          decoration: TextDecoration.underline,
-          decorationColor: _kOrange.withOpacity(0.4),
-        ),
-        h3: const TextStyle(
-          color: _kOrange, fontSize: 13.5, fontWeight: FontWeight.w700,
-        ),
-        listBullet: const TextStyle(color: _kOrange),
-        code: const TextStyle(
-          backgroundColor: Color(0x18FF6B2B),
-          color: _kOrangeDark,
-          fontFamily: "monospace",
-          fontSize: 12,
-        ),
-        codeblockDecoration: BoxDecoration(
-          color: const Color(0x0DFF6B2B),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: _kOrange.withOpacity(0.2)),
-        ),
-        blockquote: const TextStyle(color: Color(0xFF555555), fontSize: 13),
-        blockquoteDecoration: BoxDecoration(
-          border: Border(left: BorderSide(color: _kOrange, width: 3)),
-          color: const Color(0x08FF6B2B),
-          borderRadius: const BorderRadius.only(
-            topRight: Radius.circular(8),
-            bottomRight: Radius.circular(8),
+    return Directionality(
+      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+      child: MarkdownBody(
+        data: text,
+        selectable: false,
+        styleSheet: MarkdownStyleSheet(
+          p: TextStyle(
+            color: _kDark, fontSize: 13.5,
+            height: isRtl ? 2.0 : 1.65,
+            fontFamily: isRtl ? "Cairo" : null,
+          ),
+          strong: const TextStyle(
+            color: _kDark, fontWeight: FontWeight.w700,
+            backgroundColor: Color(0x18FF6B2B),
+          ),
+          em: const TextStyle(
+            color: Color(0xFF555555), fontStyle: FontStyle.italic,
+          ),
+          h1: const TextStyle(
+            color: _kDark, fontSize: 15, fontWeight: FontWeight.w800,
+          ),
+          h2: TextStyle(
+            color: _kDark, fontSize: 14, fontWeight: FontWeight.w700,
+            decoration: TextDecoration.underline,
+            decorationColor: _kOrange.withOpacity(0.4),
+          ),
+          h3: const TextStyle(
+            color: _kOrange, fontSize: 13.5, fontWeight: FontWeight.w700,
+          ),
+          listBullet: const TextStyle(color: _kOrange),
+          code: const TextStyle(
+            backgroundColor: Color(0x18FF6B2B),
+            color: _kOrangeDark,
+            fontFamily: "monospace",
+            fontSize: 12,
+          ),
+          codeblockDecoration: BoxDecoration(
+            color: const Color(0x0DFF6B2B),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: _kOrange.withOpacity(0.2)),
+          ),
+          blockquote: const TextStyle(
+            color: Color(0xFF555555), fontSize: 13,
+          ),
+          blockquoteDecoration: BoxDecoration(
+            border: Border(
+              left:  isRtl ? BorderSide.none : BorderSide(color: _kOrange, width: 3),
+              right: isRtl ? BorderSide(color: _kOrange, width: 3) : BorderSide.none,
+            ),
+            color: const Color(0x08FF6B2B),
+            borderRadius: isRtl
+                ? const BorderRadius.only(
+                    topLeft:    Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  )
+                : const BorderRadius.only(
+                    topRight:    Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
           ),
         ),
-        // Ordered list items styled with orange numbering background
-        orderedListAlign: WrapAlignment.start,
-        unorderedListAlign: WrapAlignment.start,
       ),
     );
   }
 
-  // ── Action Buttons ─────────────────────────────────────────────────────────
+  // ── Buttons ────────────────────────────────────────────────────────────────
   Widget _buildButtons(List<String> buttons, bool isRtl) {
     return Padding(
-      padding: const EdgeInsets.only(top: 6, bottom: 4),
+      padding: const EdgeInsets.only(top: 6, bottom: 2),
       child: Wrap(
         alignment: isRtl ? WrapAlignment.end : WrapAlignment.start,
         spacing: 6,
         runSpacing: 6,
         children: buttons.map((btn) {
+          final isSupport = _kSupportLabels.contains(btn);
           return GestureDetector(
             onTap: () => _sendMessage(btn, clickedButton: btn),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isSupport ? _kOrangeLight : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _kOrange.withOpacity(0.5)),
+                border: Border.all(
+                  color: _kOrange.withOpacity(isSupport ? 0.6 : 0.35),
+                  width: isSupport ? 1.5 : 1,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: _kOrange.withOpacity(0.08),
@@ -557,8 +701,11 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
               ),
               child: Text(
                 btn,
-                style: const TextStyle(
-                  color: _kOrange, fontSize: 12, fontWeight: FontWeight.w600,
+                style: TextStyle(
+                  color: _kOrange,
+                  fontSize: 12,
+                  fontWeight: isSupport ? FontWeight.w700 : FontWeight.w600,
+                  fontFamily: _isArabicText(btn) ? "Cairo" : null,
                 ),
               ),
             ),
@@ -574,7 +721,7 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF8F5),
+        color: _kOrangeLight,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _kOrange.withOpacity(0.2)),
       ),
@@ -583,57 +730,38 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
         children: [
           Text(
             _T[_lang]!["contact_title"]!,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: _kDark),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _T[_lang]!["contact_sub"]!,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
-          ),
-          const SizedBox(height: 10),
-          if (info["email"] != null)
-            _contactRow(Icons.email_outlined, _T[_lang]!["email_label"]!, info["email"]),
-          if (info["phone"] != null)
-            _contactRow(Icons.phone_outlined, _T[_lang]!["phone_label"]!, info["phone"]),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => _showLeadForm(context),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 9),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [_kOrange, _kOrangeDark]),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _T[_lang]!["form_title"]!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13,
-                ),
-              ),
+            style: const TextStyle(
+              fontWeight: FontWeight.w700, fontSize: 13, color: _kOrange,
             ),
           ),
+          const SizedBox(height: 8),
+          if (info["email"] != null)
+            _contactRow(Icons.email_outlined, info["email"]),
+          if (info["phone"] != null)
+            _contactRow(Icons.phone_outlined, info["phone"]),
         ],
       ),
     );
   }
 
-  Widget _contactRow(IconData icon, String label, String value) {
+  Widget _contactRow(IconData icon, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Icon(icon, size: 15, color: _kOrange),
-          const SizedBox(width: 6),
-          Text(
-            "$label: ",
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _kDark),
+          Container(
+            width: 26, height: 26,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [_kOrange, _kOrangeDark]),
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Icon(icon, color: Colors.white, size: 13),
           ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF444444)),
+              style: const TextStyle(fontSize: 12.5, color: _kDark, fontWeight: FontWeight.w500),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -642,49 +770,66 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
     );
   }
 
-  // ── Lead Form (Modal) ──────────────────────────────────────────────────────
-  void _showLeadForm(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _LeadFormSheet(
-        sessionId: _sessionId,
-        language: _lang,
-        apiBase: _kApiBase,
+  // ── Lead Form Inline ───────────────────────────────────────────────────────
+  Widget _buildLeadFormInline(String formLang) {
+    final isFormRtl = formLang == "ar";
+    return Directionality(
+      textDirection: isFormRtl ? TextDirection.rtl : TextDirection.ltr,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _kOrange.withOpacity(0.15)),
+          boxShadow: [
+            BoxShadow(
+              color: _kOrange.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.hardEdge,
+        child: _LeadFormInline(
+          sessionId: _sessionId,
+          language:  formLang,
+          apiBase:   _kApiBase,
+          onSubmitted: () {
+            final tLocal = _T[formLang]!;
+            final successBtns = formLang == "ar"
+                ? ["كيف يعمل ديفيدو", "استكشف الفرص", "تواصل مع الدعم"]
+                : ["How Divido Works", "Explore Opportunities", "Contact Support"];
+            setState(() {
+              // Replace the lead form message with success message
+              final idx = _messages.indexWhere(
+                (m) => m.type == _MsgType.leadForm && m.formLang == formLang
+              );
+              if (idx >= 0) {
+                _messages[idx] = _Message(
+                  role:    "bot",
+                  text:    tLocal["form_success"]!,
+                  buttons: successBtns,
+                );
+              }
+            });
+            _scrollToBottom();
+          },
+        ),
       ),
     );
   }
 
-  // ── Typing Indicator ───────────────────────────────────────────────────────
+  // ── Typing indicator ───────────────────────────────────────────────────────
   Widget _buildTypingIndicator() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
-          Container(
-            width: 8, height: 8,
-            margin: const EdgeInsets.only(right: 4),
-            decoration: BoxDecoration(
-              color: _kOrange.withOpacity(0.6),
-              shape: BoxShape.circle,
-            ),
-          ),
-          Container(
-            width: 8, height: 8,
-            margin: const EdgeInsets.only(right: 4),
-            decoration: BoxDecoration(
-              color: _kOrange.withOpacity(0.4),
-              shape: BoxShape.circle,
-            ),
-          ),
-          Container(
-            width: 8, height: 8,
-            decoration: BoxDecoration(
-              color: _kOrange.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-          ),
+          _dot(0.6),
+          const SizedBox(width: 4),
+          _dot(0.4),
+          const SizedBox(width: 4),
+          _dot(0.2),
           const SizedBox(width: 8),
           Text(
             _T[_lang]!["typing"]!,
@@ -695,66 +840,81 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
     );
   }
 
-  // ── Input Row ──────────────────────────────────────────────────────────────
+  Widget _dot(double opacity) => Container(
+    width: 8, height: 8,
+    decoration: BoxDecoration(
+      color: _kOrange.withOpacity(opacity), shape: BoxShape.circle,
+    ),
+  );
+
+  // ── Input ──────────────────────────────────────────────────────────────────
   Widget _buildInput(bool isRtl) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: _kBorder)),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
+          bottomLeft:  Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: TextField(
-              controller: _ctrl,
-              textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
-              decoration: InputDecoration(
-                hintText: _T[_lang]!["placeholder"]!,
-                hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 13),
-                filled: true,
-                fillColor: _kGrey,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              style: const TextStyle(fontSize: 14),
-              onSubmitted: _sendMessage,
-              textInputAction: TextInputAction.send,
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => _sendMessage(_ctrl.text),
-            child: Container(
-              width: 40, height: 40,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [_kOrange, _kOrangeDark],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: _kOrange.withOpacity(0.35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _ctrl,
+                  textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+                  decoration: InputDecoration(
+                    hintText: _T[_lang]!["placeholder"]!,
+                    hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 13),
+                    filled:     true,
+                    fillColor:  _kGrey,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
-                ],
+                  style: const TextStyle(fontSize: 14),
+                  onSubmitted: _sendMessage,
+                  textInputAction: TextInputAction.send,
+                ),
               ),
-              child: Icon(
-                isRtl ? Icons.arrow_back_rounded : Icons.arrow_forward_rounded,
-                color: Colors.white,
-                size: 20,
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _sendMessage(_ctrl.text),
+                child: Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [_kOrange, _kOrangeDark],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: _kOrange.withOpacity(0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    isRtl ? Icons.arrow_back_rounded : Icons.arrow_forward_rounded,
+                    color: Colors.white, size: 20,
+                  ),
+                ),
               ),
-            ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _T[_lang]!["footer"]!,
+            style: const TextStyle(fontSize: 9, color: Color(0xFFCCCCCC)),
           ),
         ],
       ),
@@ -762,45 +922,80 @@ class _DividoChatWidgetState extends State<DividoChatWidget>
   }
 }
 
-// ── Lead Form Bottom Sheet ─────────────────────────────────────────────────────
-class _LeadFormSheet extends StatefulWidget {
+// ── Streaming Cursor ──────────────────────────────────────────────────────────
+class _StreamingCursor extends StatefulWidget {
+  @override
+  State<_StreamingCursor> createState() => _StreamingCursorState();
+}
+
+class _StreamingCursorState extends State<_StreamingCursor>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) => Opacity(
+        opacity: _ctrl.value,
+        child: const Text("▋",
+          style: TextStyle(color: _kOrange, fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Inline Lead Form ──────────────────────────────────────────────────────────
+class _LeadFormInline extends StatefulWidget {
   final String sessionId;
   final String language;
   final String apiBase;
+  final VoidCallback onSubmitted;
 
-  const _LeadFormSheet({
+  const _LeadFormInline({
     required this.sessionId,
     required this.language,
     required this.apiBase,
+    required this.onSubmitted,
   });
 
   @override
-  State<_LeadFormSheet> createState() => _LeadFormSheetState();
+  State<_LeadFormInline> createState() => _LeadFormInlineState();
 }
 
-class _LeadFormSheetState extends State<_LeadFormSheet> {
+class _LeadFormInlineState extends State<_LeadFormInline> {
   final _nameCtrl  = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
-  bool _submitting = false;
-  bool _submitted  = false;
-  String _error    = "";
+  bool   _submitting = false;
+  String _error      = "";
 
-  String get _t => widget.language;
+  Map<String, String> get _t => _T[widget.language]!;
+  bool get _isRtl => widget.language == "ar";
 
   Future<void> _submit() async {
     final name  = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim();
-
     if (name.isEmpty || email.isEmpty || !email.contains("@")) {
-      setState(() => _error = _T[_t]!["form_error"]!);
+      setState(() => _error = _t["form_error"]!);
       return;
     }
-
     setState(() { _submitting = true; _error = ""; });
-
     try {
-      final response = await http.post(
+      final res = await http.post(
         Uri.parse("${widget.apiBase}/chat/lead"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
@@ -810,200 +1005,193 @@ class _LeadFormSheetState extends State<_LeadFormSheet> {
           "phone":           _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
           "context_message": "Mobile app lead",
         }),
-      );
-
-      if (response.statusCode == 200) {
-        setState(() { _submitted = true; _submitting = false; });
+      ).timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        widget.onSubmitted();
       } else {
-        setState(() { _error = _T[_t]!["form_error"]!; _submitting = false; });
+        setState(() { _error = _t["form_error"]!; _submitting = false; });
       }
     } catch (_) {
-      setState(() { _error = _T[_t]!["form_error"]!; _submitting = false; });
+      setState(() { _error = _t["form_error"]!; _submitting = false; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isRtl = widget.language == "ar";
-
     return Directionality(
-      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
-      child: Container(
-        padding: EdgeInsets.fromLTRB(
-          24, 24, 24,
-          MediaQuery.of(context).viewInsets.bottom + 24,
-        ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+      textDirection: _isRtl ? TextDirection.rtl : TextDirection.ltr,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(colors: [_kDark, _kDark2]),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 38, height: 38,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [_kOrange, _kOrangeDark]),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: const Icon(Icons.chat_bubble_outline_rounded,
+                    color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: _isRtl
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      Text(_t["form_title"]!,
+                        style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w800,
+                          fontSize: 14, fontFamily: null,
+                        )),
+                      Text(_t["form_sub"]!,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5), fontSize: 11,
+                        )),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        child: _submitted ? _buildSuccess() : _buildForm(isRtl),
+
+          // Fields
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
+            child: Column(
+              children: [
+                _field(_nameCtrl,  _t["name_label"]!,   _t["name_hint"]!,   Icons.person_outline_rounded),
+                const SizedBox(height: 10),
+                _field(_emailCtrl, _t["email_label2"]!, _t["email_hint"]!,  Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress),
+                const SizedBox(height: 10),
+                _field(_phoneCtrl, _t["phone_label2"]!, _t["phone_hint"]!,  Icons.phone_outlined,
+                    keyboardType: TextInputType.phone),
+              ],
+            ),
+          ),
+
+          if (_error.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFDECEA),
+                borderRadius: BorderRadius.circular(8),
+                border: Border(
+                  left:  _isRtl ? BorderSide.none
+                      : const BorderSide(color: Color(0xFFC0392B), width: 3),
+                  right: _isRtl
+                      ? const BorderSide(color: Color(0xFFC0392B), width: 3)
+                      : BorderSide.none,
+                ),
+              ),
+              child: Text(_error,
+                style: const TextStyle(color: Color(0xFFC0392B), fontSize: 12),
+                textAlign: _isRtl ? TextAlign.right : TextAlign.left,
+              ),
+            ),
+
+          // Submit
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 16),
+            child: GestureDetector(
+              onTap: _submitting ? null : _submit,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: _submitting
+                        ? [const Color(0xFFCCCCCC), const Color(0xFFAAAAAA)]
+                        : [_kOrange, _kOrangeDark],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: _submitting ? [] : [
+                    BoxShadow(
+                      color: _kOrange.withOpacity(0.4),
+                      blurRadius: 12, offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (_submitting)
+                      const SizedBox(
+                        width: 14, height: 14,
+                        child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2,
+                        ),
+                      ),
+                    if (_submitting) const SizedBox(width: 8),
+                    Text(
+                      _submitting ? _t["submitting"]! : "${_t["submit"]!} →",
+                      style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSuccess() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.check_circle_rounded, color: Color(0xFF27AE60), size: 56),
-        const SizedBox(height: 16),
-        Text(
-          _T[_t]!["form_success"]!,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: _kDark),
-        ),
-        const SizedBox(height: 20),
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 13),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [_kOrange, _kOrangeDark]),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              "✓ Done",
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildForm(bool isRtl) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Drag handle
-        Center(
-          child: Container(
-            width: 40, height: 4,
-            decoration: BoxDecoration(
-              color: const Color(0xFFDDDDDD),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Header
-        Row(
-          children: [
-            Container(
-              width: 38, height: 38,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [_kOrange, _kOrangeDark]),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _T[_t]!["form_title"]!,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: _kDark),
-                ),
-                Text(
-                  _T[_t]!["form_sub"]!,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF888888)),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 22),
-
-        // Fields
-        _inputField(_nameCtrl,  _T[_t]!["name_hint"]!,  Icons.person_outline_rounded,  isRtl),
-        const SizedBox(height: 12),
-        _inputField(_emailCtrl, _T[_t]!["email_hint"]!, Icons.email_outlined,           isRtl, keyboardType: TextInputType.emailAddress),
-        const SizedBox(height: 12),
-        _inputField(_phoneCtrl, _T[_t]!["phone_hint"]!, Icons.phone_outlined,           isRtl, keyboardType: TextInputType.phone),
-
-        if (_error.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Text(_error, style: const TextStyle(color: Color(0xFFC0392B), fontSize: 13)),
-          ),
-
-        const SizedBox(height: 20),
-
-        // Submit button
-        GestureDetector(
-          onTap: _submitting ? null : _submit,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 13),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: _submitting
-                    ? [const Color(0xFFCCCCCC), const Color(0xFFAAAAAA)]
-                    : [_kOrange, _kOrangeDark],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: _submitting ? [] : [
-                BoxShadow(
-                  color: _kOrange.withOpacity(0.35),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Text(
-              _submitting ? _T[_t]!["submitting"]! : _T[_t]!["submit"]!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _inputField(
+  Widget _field(
     TextEditingController ctrl,
+    String label,
     String hint,
-    IconData icon,
-    bool isRtl, {
+    IconData icon, {
     TextInputType keyboardType = TextInputType.text,
   }) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: keyboardType,
-      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
-      style: const TextStyle(fontSize: 14, color: _kDark),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 13),
-        prefixIcon: Icon(icon, color: _kOrange, size: 20),
-        filled: true,
-        fillColor: const Color(0xFFFAFAFA),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _kBorder),
+    return Column(
+      crossAxisAlignment: _isRtl ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(
+          fontSize: _isRtl ? 11.5 : 10.5,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF999999),
+          letterSpacing: _isRtl ? 0 : 0.6,
+        )),
+        const SizedBox(height: 5),
+        TextField(
+          controller:   ctrl,
+          keyboardType: keyboardType,
+          textDirection: _isRtl ? TextDirection.rtl : TextDirection.ltr,
+          style: const TextStyle(fontSize: 13.5, color: _kDark),
+          decoration: InputDecoration(
+            hintText:  hint,
+            hintStyle: const TextStyle(color: Color(0xFFC0C0C0), fontSize: 13),
+            prefixIcon: Icon(icon, color: _kOrange, size: 18),
+            filled:    true,
+            fillColor: const Color(0xFFF8F7F5),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFE8E8E8)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: _kOrange, width: 1.5),
+            ),
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _kBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _kOrange, width: 1.5),
-        ),
-      ),
+      ],
     );
   }
 }
