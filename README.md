@@ -7,7 +7,7 @@ An AI-powered bilingual (English + Arabic) chatbot for the Divido fractional rea
 ### Prerequisites
 - Docker Desktop
 - Node.js v24+
-- Ollama running locally with `llama3.1:8b` and `nomic-embed-text`
+- Ollama (handled automatically by Docker — models pulled after first run)
 
 ### Local Development (without Docker)
 ```bash
