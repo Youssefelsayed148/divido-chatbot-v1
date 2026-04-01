@@ -1,0 +1,77 @@
+# Divido Chatbot — Flutter Integration Guide
+
+Provided by The Osiris Labs.
+
+## What You Receive
+- `divido_chat_widget.dart` — self-contained chat widget
+- This guide
+
+---
+
+## Step 1 — Add the File
+Copy `divido_chat_widget.dart` into your Flutter project:
+```
+lib/widgets/divido_chat_widget.dart
+```
+
+---
+
+## Step 2 — Add Dependencies
+Open `pubspec.yaml` and add under `dependencies`:
+```yaml
+dependencies:
+  http: ^1.2.0
+  flutter_markdown: ^0.7.3
+  shared_preferences: ^2.5.3
+```
+
+Then run:
+```bash
+flutter pub get
+```
+
+---
+
+## Step 3 — Place the Widget
+Import and add the widget inside a `Stack` on any screen
+where you want the chat button to appear (recommended: home screen):
+```dart
+import 'package:your_app/widgets/divido_chat_widget.dart';
+
+Scaffold(
+  body: Stack(
+    children: [
+      YourExistingScreenContent(),
+      DividoChatWidget(
+        apiBaseUrl: 'https://yourdomain.com',
+      ),
+    ],
+  ),
+)
+```
+
+---
+
+## Step 4 — Set the API URL
+Replace `https://yourdomain.com` with the production URL
+provided by The Osiris Labs after server deployment.
+
+**Do not use the URL until it is confirmed by The Osiris Labs —
+the server must be live and tested first.**
+
+---
+
+## What the Widget Does
+- Floating chat button (bottom-right, above nav bar)
+- Slides up into a full chat panel
+- Supports English and Arabic
+- Streaming responses from the Divido AI backend
+- Handles its own state — no additional setup needed
+
+---
+
+## Support
+Contact The Osiris Labs for:
+- Production API URL confirmation
+- Any integration issues
+- Widget updates
